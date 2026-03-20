@@ -87,9 +87,6 @@ contexts/
 
 Each file contains instructions that Claude follows when the profile is loaded.
 
-## Backup
-
-The only data that needs backing up is `~/.local/share/betterclaud/lancedb/` — your memories database. Everything else is either in the repo (code), in your Obsidian vault (synced), or trivially recreatable (config).
 
 ## Development
 
