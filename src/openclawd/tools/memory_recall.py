@@ -13,6 +13,8 @@ def memory_recall(
     category: str = "",
     project: str = "",
     min_importance: int = 1,
+    tier: str = "",
+    scope: str = "",
 ) -> str:
     """Search stored memories semantically.
 
@@ -22,6 +24,8 @@ def memory_recall(
         category: Filter by category (empty = all).
         project: Filter by project (empty = all).
         min_importance: Minimum importance threshold (default 1).
+        tier: Filter by tier: core|working|peripheral (empty = all).
+        scope: Filter by scope string (empty = all).
     """
     table = get_or_create_table(config.MEMORY_TABLE, MEMORY_SCHEMA)
 
@@ -43,6 +47,10 @@ def memory_recall(
         filters.append(f"project = '{project}'")
     if min_importance > 1:
         filters.append(f"importance >= {min_importance}")
+    if tier:
+        filters.append(f"tier = '{tier}'")
+    if scope:
+        filters.append(f"scope = '{scope}'")
 
     if filters:
         search = search.where(" AND ".join(filters))
@@ -62,6 +70,8 @@ def memory_recall(
         proj = results.column("project")[i].as_py()
         tags = results.column("tags")[i].as_py()
         imp = results.column("importance")[i].as_py()
+        tier_val = results.column("tier")[i].as_py()
+        scope_val = results.column("scope")[i].as_py()
         dist = results.column("_distance")[i].as_py()
 
         tags_str = ", ".join(json.loads(tags)) if tags else ""
@@ -70,7 +80,7 @@ def memory_recall(
 
         output.append(
             f"--- Memory {i + 1} (distance: {dist:.4f}) ---\n"
-            f"  Category: {cat}{proj_str} | Importance: {imp}\n"
+            f"  Category: {cat}{proj_str} | Importance: {imp} | Tier: {tier_val} | Scope: {scope_val}\n"
             f"{tags_line}"
             f"  {content}"
         )

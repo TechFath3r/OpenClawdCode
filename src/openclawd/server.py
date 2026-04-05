@@ -23,12 +23,26 @@ def store_memory(
     project: str = "",
     tags: list[str] | None = None,
     importance: int = 5,
+    tier: str = "working",
+    temporal_type: str = "static",
+    abstract: str = "",
+    overview: str = "",
+    confidence: float = 1.0,
+    scope: str = "",
 ) -> str:
     """Store a memory for later recall across sessions and projects.
 
-    Categories: general, preference, decision, learning, architecture, debugging, tool_usage.
+    Categories: general, preference, decision, learning, architecture, debugging,
+    tool_usage, profile, preferences, entities, events, cases, patterns.
+
+    Tier (core|working|peripheral) controls decay floor. Use `core` for durable
+    facts, `working` (default) for active context, `peripheral` for low-signal.
+    temporal_type=dynamic makes a memory decay 3x faster.
     """
-    return memory_store(content, category, project, tags, importance)
+    return memory_store(
+        content, category, project, tags, importance,
+        tier, temporal_type, abstract, overview, confidence, scope,
+    )
 
 
 @mcp.tool()
@@ -38,9 +52,11 @@ def recall_memory(
     category: str = "",
     project: str = "",
     min_importance: int = 1,
+    tier: str = "",
+    scope: str = "",
 ) -> str:
     """Search stored memories semantically. Use at session start and when context is needed."""
-    return memory_recall(query, limit, category, project, min_importance)
+    return memory_recall(query, limit, category, project, min_importance, tier, scope)
 
 
 @mcp.tool()
