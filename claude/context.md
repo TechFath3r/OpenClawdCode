@@ -1,5 +1,9 @@
 # Architecture & Context
 
+## Canonical Reference
+
+**[`references/source-algorithms.md`](../references/source-algorithms.md)** contains the extracted algorithms, formulas, prompts, SQL schemas, and exact parameter defaults from memory-lancedb-pro and lossless-claw, with file:line citations. Treat it as the spec for what we're porting. Update it if the upstream repos change and we want to track.
+
 ## The Vision
 
 OpenClawdCode is a **spiritual port** of two OpenClaw plugins to Claude Code:
