@@ -9,11 +9,11 @@ import pytest
 @pytest.fixture
 def temp_db(tmp_path):
     env = os.environ.copy()
-    env["BETTERCLAUD_LANCEDB_PATH"] = str(tmp_path / "lancedb")
-    env["BETTERCLAUD_VAULT_PATH"] = str(tmp_path / "vault")
+    env["OPENCLAWD_LANCEDB_PATH"] = str(tmp_path / "lancedb")
+    env["OPENCLAWD_VAULT_PATH"] = str(tmp_path / "vault")
     with mock.patch.dict(os.environ, env):
         import importlib
-        from betterclaud import config, db
+        from openclawd import config, db
         importlib.reload(config)
         db.get_db.cache_clear()
         importlib.reload(db)
@@ -23,21 +23,21 @@ def temp_db(tmp_path):
 @pytest.fixture
 def mock_embed():
     vec = [0.1] * 768
-    with mock.patch("betterclaud.tools.vault_search.embed_one", return_value=vec):
+    with mock.patch("openclawd.tools.vault_search.embed_one", return_value=vec):
         yield vec
 
 
 def test_empty_vault(temp_db, mock_embed):
-    from betterclaud.tools.vault_search import vault_search
+    from openclawd.tools.vault_search import vault_search
 
     result = vault_search("anything")
     assert "empty" in result.lower() or "index" in result.lower()
 
 
 def test_vault_search_with_data(temp_db, mock_embed):
-    from betterclaud.tools.vault_search import vault_search
-    from betterclaud.db import get_or_create_table, VAULT_SCHEMA
-    from betterclaud import config
+    from openclawd.tools.vault_search import vault_search
+    from openclawd.db import get_or_create_table, VAULT_SCHEMA
+    from openclawd import config
 
     # Insert some test data
     table = get_or_create_table(config.VAULT_TABLE, VAULT_SCHEMA)

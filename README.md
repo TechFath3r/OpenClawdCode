@@ -1,101 +1,170 @@
-# BetterClaud
+<div align="center">
 
-Persistent cross-project memory for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via MCP.
+# 🦞 OpenClawdCode
 
-Claude Code is powerful but forgets everything between sessions. BetterClaud gives it a long-term memory using semantic vector search — memories persist across sessions and projects.
+**Give Claude Code the memory and context engine OpenClaw users loved — locally, via MCP.**
 
-## How It Works
+[![Claude Code](https://img.shields.io/badge/Claude_Code-MCP-blue)](https://docs.anthropic.com/en/docs/claude-code)
+[![LanceDB](https://img.shields.io/badge/LanceDB-Vector_Store-orange)](https://lancedb.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status: Early / Community Welcome](https://img.shields.io/badge/Status-Early-yellow.svg)](#contributing)
 
-- **MCP server** provides memory tools to Claude Code (store, recall, search)
-- **LanceDB** stores memories as embeddings locally (no cloud, no server daemon)
-- **Ollama** generates embeddings locally via `nomic-embed-text`
-- **Obsidian vault** integration for searching notes and writing session logs (optional)
-- **ChromaDB** integration for domain-specific knowledge bases (optional)
-- **Context profiles** for per-channel/per-use-case instructions (optional)
+</div>
 
-Everything runs locally on one machine.
+---
+
+## Why this exists
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) is powerful. But it forgets everything between sessions, and when its context window fills up, older messages are lost.
+
+The OpenClaw community built two plugins that fixed this for that agent:
+
+- **[memory-lancedb-pro](https://github.com/CortexReach/memory-lancedb-pro)** — auto-captured long-term memory with hybrid retrieval, cross-encoder rerank, Weibull decay, and per-scope isolation
+- **[lossless-claw](https://github.com/Martian-Engineering/lossless-claw)** — LCM (Lossless Context Management): every message preserved in a SQLite DAG of summaries, with tools to drill back into raw detail on demand
+
+**OpenClawdCode is an attempt to bring those same capabilities to Claude Code.** Not a fork, not a replacement — a spiritual port, re-implemented as an MCP server plus Claude Code hooks. Everything runs locally on one machine. No cloud, no server daemon, no telemetry.
+
+## What it does (and honestly, what it can't)
+
+### It can
+
+- **Persistent memory across sessions and projects** — LanceDB-backed, semantic + BM25 hybrid retrieval, auto-capture from conversations via hooks
+- **Automatic context injection** — relevant memories surface before each prompt via the `UserPromptSubmit` hook (no manual recall needed)
+- **Per-project / per-scope isolation** — memories tagged and filtered by working directory, project, or custom scope
+- **Obsidian vault integration** — index your notes for semantic search, write session logs back into the vault
+- **Lossless message log** *(planned v1.1)* — every turn archived to SQLite with a DAG of summaries; agent can drill back into any compacted history via `lcm_grep` / `lcm_expand` style tools
+- **Intelligent forgetting** *(planned v1)* — Weibull-decay scoring so noise fades and important memories stay
+
+### It can't
+
+Claude Code owns its own context engine — we can **augment** it (inject context, provide recall tools, archive messages) but we **can't replace** its native compaction the way `lossless-claw` replaces OpenClaw's. In practice: nothing is ever truly lost because we archive everything ourselves, and the agent can always pull it back. But Claude Code will still compact natively when it hits the limit. See [the honest trade-offs](#honest-trade-offs) below.
+
+## How it works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Claude Code session                      │
+└───────┬──────────────────────────────────┬──────────────────┘
+        │                                   │
+    Hooks (settings.json)              MCP tools
+        │                                   │
+        ├─ UserPromptSubmit → inject   ├─ store_memory
+        │  ranked memories              ├─ recall_memory
+        ├─ PostToolUse → log turn       ├─ search_vault
+        ├─ Stop → extract + summarize   ├─ log_session
+        ├─ PostCompact → flag recall    └─ (lcm_* tools v1.1)
+        └─ SessionStart → preload
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────┐
+│   LanceDB (memories, vector + BM25)  │  SQLite (message DAG)│
+│   Ollama (embeddings + extraction)   │  Obsidian (sessions) │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Everything is local. Ollama runs embeddings (`nomic-embed-text`) and optionally the memory extractor. LanceDB stores memories. SQLite will store the lossless message log. Your Obsidian vault (if configured) is both a searchable knowledge source and the destination for session logs.
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/yourusername/betterclaud.git
-cd betterclaud
+git clone https://github.com/TechFath3r/OpenClawdCode.git
+cd OpenClawdCode
 ./setup.sh
 ```
 
 The setup script:
 1. Installs Ollama and pulls the embedding model
 2. Creates a Python venv and installs the package
-3. Registers the MCP server with Claude Code
-4. Configures session hooks
+3. Registers the MCP server with Claude Code (`claude mcp add`)
+4. Wires `UserPromptSubmit`, `Stop`, and `PostCompact` hooks into `~/.claude/settings.json`
 5. Optionally sets up Obsidian vault integration
+
+**Requirements:** Python 3.10+, Claude Code CLI, Ollama (auto-installed), ~500MB disk.
 
 ## Tools Provided to Claude
 
-| Tool | Description |
-|------|-------------|
-| `store_memory` | Save facts, learnings, preferences, decisions |
-| `recall_memory` | Semantic search over stored memories |
-| `log_session` | Write session summary as markdown |
-| `search_vault` | Search indexed Obsidian vault (if configured) |
-| `search_knowledge` | Search ChromaDB knowledge bases (if configured) |
-| `load_context` | Load context profile for current use case (if configured) |
+| Tool | Description | Status |
+|------|-------------|--------|
+| `store_memory` | Save facts, learnings, preferences, decisions | ✅ |
+| `recall_memory` | Semantic search over stored memories | ✅ |
+| `log_session` | Write session summary as markdown | ✅ |
+| `search_vault` | Search indexed Obsidian vault | ✅ (optional) |
+| `search_knowledge` | Search ChromaDB knowledge bases | ✅ (optional) |
+| `load_context` | Load context profile for current use case | ✅ (optional) |
+| `lcm_grep` / `lcm_expand` / `lcm_describe` | Search and drill into compacted message history | 🚧 v1.1 |
 
 ## Configuration
 
-All settings are via environment variables. Edit `~/.config/betterclaud/.env`:
+All settings via environment variables in `~/.config/openclawd/.env`. Copy from [`.env.example`](.env.example).
 
 | Variable | Default | Description |
-|----------|---------|-------------|
-| `BETTERCLAUD_LANCEDB_PATH` | `~/.local/share/betterclaud/lancedb` | LanceDB directory |
-| `BETTERCLAUD_OLLAMA_URL` | `http://localhost:11434` | Ollama endpoint |
-| `BETTERCLAUD_EMBED_MODEL` | `nomic-embed-text` | Embedding model |
-| `BETTERCLAUD_VAULT_PATH` | *(empty)* | Obsidian vault path |
-| `BETTERCLAUD_CHROMADB_PATH` | *(empty)* | ChromaDB directory |
-| `BETTERCLAUD_CONTEXT_DIR` | *(empty)* | Context profiles directory |
-
-See `.env.example` for all options.
+|---|---|---|
+| `OPENCLAWD_LANCEDB_PATH` | `~/.local/share/openclawd/lancedb` | LanceDB directory |
+| `OPENCLAWD_OLLAMA_URL` | `http://localhost:11434` | Ollama endpoint |
+| `OPENCLAWD_EMBED_MODEL` | `nomic-embed-text` | Embedding model |
+| `OPENCLAWD_VAULT_PATH` | *(empty)* | Obsidian vault path |
+| `OPENCLAWD_CHROMADB_PATH` | *(empty)* | ChromaDB directory |
+| `OPENCLAWD_CONTEXT_DIR` | *(empty)* | Context profiles directory |
 
 ## Obsidian Vault Integration
 
-To index your vault for semantic search:
-
 ```bash
 # Full index
-betterclaud-index --vault /path/to/vault
+openclawd-index --vault /path/to/vault
 
 # Incremental (only changed files)
-betterclaud-index --incremental
+openclawd-index --incremental
 
-# Set up a cron job for auto-indexing
-# */15 * * * * ~/.local/share/betterclaud/venv/bin/betterclaud-index --incremental
+# Cron it (every 15 min)
+# */15 * * * * ~/.local/share/openclawd/venv/bin/openclawd-index --incremental
 ```
 
-Session logs are written to `{vault}/Claude/sessions/` — visible on all devices via Syncthing.
+Session logs land in `{vault}/Claude/sessions/` — visible on any device syncing your vault.
 
-## Context Profiles
+## Migration from memory-lancedb-pro
 
-Create `.md` files in your context directory (e.g., inside your Obsidian vault):
-
-```
-contexts/
-├── casual.md    # Light chat
-├── dev.md       # Software development
-├── repair.md    # Electronics repair
-└── sysadmin.md  # Infrastructure
-```
-
-Each file contains instructions that Claude follows when the profile is loaded.
-
-
-## Development
+If you're coming from OpenClaw's `memory-lancedb-pro`, there's a migration script that reads your existing LanceDB memories and imports them into OpenClawdCode's schema:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
+python3 scripts/migrate_claudia.py --source /path/to/existing/lancedb --table memories
 ```
+
+*(Migration is best-effort — schemas differ slightly. Review with `--dry-run` first.)*
+
+## Honest Trade-offs
+
+Compared to running OpenClaw + both plugins:
+
+**What you lose:**
+- **Messaging channels.** OpenClaw's whole thing is "ask me on WhatsApp/Slack/Discord." Claude Code is a terminal. If you want channels, keep OpenClaw for that — OpenClawdCode is for in-terminal dev work.
+- **Truly lossless context.** Claude Code will still compact natively. We archive everything to SQLite, so nothing is *actually* lost, and the agent can pull back any raw message via `lcm_expand`-style tools. But we can't prevent the compaction itself the way `lossless-claw` does inside OpenClaw.
+- **Per-skill plugin isolation the OpenClaw way.** Claude Code's skill model is different — simpler, but less pluggable.
+
+**What you gain:**
+- Lives inside the tool you're already using every day for code
+- Direct Obsidian integration without extra plumbing
+- Not coupled to any single agent's plugin API stability
+
+## Contributing
+
+**This project exists because the OpenClaw community lost two plugins they relied on.** If you came from there and miss those capabilities, your input is the most valuable thing we can get:
+
+- What did you rely on `memory-lancedb-pro` for that isn't captured here?
+- What `lossless-claw` feature do you miss the most?
+- What doesn't work on your setup?
+
+Open an issue, start a discussion, or send a PR. Early and rough is fine — this is a community port, not a product.
+
+**Roadmap lives in [`tasks/todo.md`](tasks/todo.md).** Pick anything unclaimed.
+
+## Credits
+
+Heavily inspired by:
+- **[CortexReach/memory-lancedb-pro](https://github.com/CortexReach/memory-lancedb-pro)** — the memory architecture, auto-capture, Weibull decay, hybrid retrieval
+- **[Martian-Engineering/lossless-claw](https://github.com/Martian-Engineering/lossless-claw)** — the LCM DAG approach and recall tools
+- **[OpenClaw](https://github.com/openclaw/openclaw)** — the agent those plugins were built for, and the community that built them
+
+This project is not affiliated with OpenClaw, CortexReach, or Martian Engineering. It's an independent re-implementation of the same ideas for a different host agent.
 
 ## License
 

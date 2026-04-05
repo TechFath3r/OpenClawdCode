@@ -11,11 +11,11 @@ import pytest
 def temp_db(tmp_path):
     """Set up a temp LanceDB directory and mock Ollama."""
     env = os.environ.copy()
-    env["BETTERCLAUD_LANCEDB_PATH"] = str(tmp_path / "lancedb")
+    env["OPENCLAWD_LANCEDB_PATH"] = str(tmp_path / "lancedb")
 
     with mock.patch.dict(os.environ, env):
         import importlib
-        from betterclaud import config, db
+        from openclawd import config, db
 
         importlib.reload(config)
         # Clear the lru_cache so db picks up new path
@@ -30,14 +30,14 @@ def mock_embed():
     """Mock the embedding function to return a fixed vector."""
     vec = [0.1] * 768
 
-    with mock.patch("betterclaud.tools.memory_store.embed_one", return_value=vec), \
-         mock.patch("betterclaud.tools.memory_recall.embed_one", return_value=vec):
+    with mock.patch("openclawd.tools.memory_store.embed_one", return_value=vec), \
+         mock.patch("openclawd.tools.memory_recall.embed_one", return_value=vec):
         yield vec
 
 
 def test_store_and_recall(temp_db, mock_embed):
-    from betterclaud.tools.memory_store import memory_store
-    from betterclaud.tools.memory_recall import memory_recall
+    from openclawd.tools.memory_store import memory_store
+    from openclawd.tools.memory_recall import memory_recall
 
     result = memory_store("Python prefers spaces over tabs", category="preference")
     assert "Memory stored" in result
@@ -47,9 +47,9 @@ def test_store_and_recall(temp_db, mock_embed):
 
 
 def test_dedup(temp_db, mock_embed):
-    from betterclaud.tools.memory_store import memory_store
-    from betterclaud.db import get_or_create_table, MEMORY_SCHEMA
-    from betterclaud import config
+    from openclawd.tools.memory_store import memory_store
+    from openclawd.db import get_or_create_table, MEMORY_SCHEMA
+    from openclawd import config
 
     memory_store("duplicate test content")
     memory_store("duplicate test content")
@@ -60,14 +60,14 @@ def test_dedup(temp_db, mock_embed):
 
 
 def test_invalid_category(temp_db, mock_embed):
-    from betterclaud.tools.memory_store import memory_store
+    from openclawd.tools.memory_store import memory_store
 
     result = memory_store("test", category="invalid_cat")
     assert "Invalid category" in result
 
 
 def test_importance_clamping(temp_db, mock_embed):
-    from betterclaud.tools.memory_store import memory_store
+    from openclawd.tools.memory_store import memory_store
 
     # Should not raise even with out-of-range importance
     result = memory_store("test", importance=99)

@@ -9,10 +9,10 @@ import pytest
 @pytest.fixture
 def temp_db(tmp_path):
     env = os.environ.copy()
-    env["BETTERCLAUD_LANCEDB_PATH"] = str(tmp_path / "lancedb")
+    env["OPENCLAWD_LANCEDB_PATH"] = str(tmp_path / "lancedb")
     with mock.patch.dict(os.environ, env):
         import importlib
-        from betterclaud import config, db
+        from openclawd import config, db
         importlib.reload(config)
         db.get_db.cache_clear()
         importlib.reload(db)
@@ -22,21 +22,21 @@ def temp_db(tmp_path):
 @pytest.fixture
 def mock_embed():
     vec = [0.1] * 768
-    with mock.patch("betterclaud.tools.memory_store.embed_one", return_value=vec), \
-         mock.patch("betterclaud.tools.memory_recall.embed_one", return_value=vec):
+    with mock.patch("openclawd.tools.memory_store.embed_one", return_value=vec), \
+         mock.patch("openclawd.tools.memory_recall.embed_one", return_value=vec):
         yield
 
 
 def test_empty_db(temp_db, mock_embed):
-    from betterclaud.tools.memory_recall import memory_recall
+    from openclawd.tools.memory_recall import memory_recall
 
     result = memory_recall("anything")
     assert "No memories stored" in result
 
 
 def test_category_filter(temp_db, mock_embed):
-    from betterclaud.tools.memory_store import memory_store
-    from betterclaud.tools.memory_recall import memory_recall
+    from openclawd.tools.memory_store import memory_store
+    from openclawd.tools.memory_recall import memory_recall
 
     memory_store("I like dark mode", category="preference")
     memory_store("Fixed the auth bug", category="debugging")
@@ -46,8 +46,8 @@ def test_category_filter(temp_db, mock_embed):
 
 
 def test_importance_filter(temp_db, mock_embed):
-    from betterclaud.tools.memory_store import memory_store
-    from betterclaud.tools.memory_recall import memory_recall
+    from openclawd.tools.memory_store import memory_store
+    from openclawd.tools.memory_recall import memory_recall
 
     memory_store("trivial thing", importance=1)
     memory_store("critical thing", importance=10)

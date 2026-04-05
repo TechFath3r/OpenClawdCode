@@ -17,7 +17,7 @@ def session_log(
     """Write a session summary as a markdown file.
 
     If an Obsidian vault is configured, writes to the vault's session directory.
-    Otherwise writes to ~/.local/share/betterclaud/sessions/.
+    Otherwise writes to ~/.local/share/openclawd/sessions/.
 
     Args:
         summary: The session summary text.
@@ -34,7 +34,7 @@ def session_log(
     if config.VAULT_PATH:
         out_dir = Path(config.VAULT_PATH) / config.VAULT_SESSION_DIR
     else:
-        out_dir = Path.home() / ".local" / "share" / "betterclaud" / "sessions"
+        out_dir = Path.home() / ".local" / "share" / "openclawd" / "sessions"
 
     os.makedirs(out_dir, exist_ok=True)
     filepath = out_dir / filename

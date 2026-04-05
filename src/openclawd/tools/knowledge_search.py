@@ -27,7 +27,7 @@ def knowledge_search(
     try:
         col = _get_chromadb_collection(collection or None)
     except ImportError:
-        return "ChromaDB is not installed. Install with: pip install betterclaud[chromadb]"
+        return "ChromaDB is not installed. Install with: pip install openclawd[chromadb]"
     except Exception as e:
         return f"Error accessing ChromaDB: {e}"
 

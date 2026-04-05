@@ -16,9 +16,9 @@ def vault_search(query: str, limit: int = 5) -> str:
 
     try:
         if table.count_rows() == 0:
-            return "Vault index is empty. Run 'betterclaud-index' to index your vault."
+            return "Vault index is empty. Run 'openclawd-index' to index your vault."
     except Exception:
-        return "Vault index is empty. Run 'betterclaud-index' to index your vault."
+        return "Vault index is empty. Run 'openclawd-index' to index your vault."
 
     vector = embed_one(query)
 

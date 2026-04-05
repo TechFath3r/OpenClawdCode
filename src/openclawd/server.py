@@ -1,4 +1,4 @@
-"""BetterClaud MCP server — persistent memory for Claude Code."""
+"""OpenClawdCode MCP server — persistent memory for Claude Code."""
 
 import logging
 
@@ -10,9 +10,9 @@ from .tools.memory_recall import memory_recall
 from .tools.session_log import session_log
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("betterclaud")
+logger = logging.getLogger("openclawd")
 
-mcp = FastMCP("betterclaud-memory")
+mcp = FastMCP("openclawd-memory")
 
 # --- Always-on tools ---
 
@@ -80,8 +80,8 @@ if config.CHROMADB_PATH:
         logger.info("Knowledge search enabled (path: %s)", config.CHROMADB_PATH)
     except ImportError:
         logger.warning(
-            "BETTERCLAUD_CHROMADB_PATH is set but chromadb is not installed. "
-            "Install with: pip install betterclaud[chromadb]"
+            "OPENCLAWD_CHROMADB_PATH is set but chromadb is not installed. "
+            "Install with: pip install openclawd[chromadb]"
         )
 
 

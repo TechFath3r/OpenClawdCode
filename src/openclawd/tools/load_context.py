@@ -16,7 +16,7 @@ def load_context(profile: str) -> str:
         profile: Profile name (e.g. "repair", "dev", "casual"). Maps to {profile}.md.
     """
     if not config.CONTEXT_DIR:
-        return "Context profiles not configured. Set BETTERCLAUD_CONTEXT_DIR to enable."
+        return "Context profiles not configured. Set OPENCLAWD_CONTEXT_DIR to enable."
 
     ctx_dir = Path(config.CONTEXT_DIR)
     if not ctx_dir.is_dir():

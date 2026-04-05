@@ -14,7 +14,7 @@ from . import config
 from .db import VAULT_SCHEMA, get_or_create_table
 from .embeddings import embed_batch
 
-STATE_FILE = os.path.expanduser("~/.local/state/betterclaud-vault-index.json")
+STATE_FILE = os.path.expanduser("~/.local/state/openclawd-vault-index.json")
 
 DEFAULT_EXCLUDES = {
     ".obsidian", ".trash", "Assets", "Archive", "Templates",

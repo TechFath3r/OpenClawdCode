@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# BetterClaud Setup — One-command install
+# OpenClawdCode Setup — One-command install
 # Idempotent: safe to re-run.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_DIR="$HOME/.local/share/betterclaud/venv"
-CONFIG_DIR="$HOME/.config/betterclaud"
+VENV_DIR="$HOME/.local/share/openclawd/venv"
+CONFIG_DIR="$HOME/.config/openclawd"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 
-info()  { echo -e "\033[1;34m[betterclaud]\033[0m $*"; }
-ok()    { echo -e "\033[1;32m[betterclaud]\033[0m $*"; }
-warn()  { echo -e "\033[1;33m[betterclaud]\033[0m $*"; }
-error() { echo -e "\033[1;31m[betterclaud]\033[0m $*"; exit 1; }
+info()  { echo -e "\033[1;34m[openclawd]\033[0m $*"; }
+ok()    { echo -e "\033[1;32m[openclawd]\033[0m $*"; }
+warn()  { echo -e "\033[1;33m[openclawd]\033[0m $*"; }
+error() { echo -e "\033[1;31m[openclawd]\033[0m $*"; exit 1; }
 
 # --- Prerequisites ---
 
@@ -49,7 +49,7 @@ if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
 fi
 
 # Pull embedding model
-EMBED_MODEL="${BETTERCLAUD_EMBED_MODEL:-nomic-embed-text}"
+EMBED_MODEL="${OPENCLAWD_EMBED_MODEL:-nomic-embed-text}"
 if ollama list 2>/dev/null | grep -q "$EMBED_MODEL"; then
     ok "Model $EMBED_MODEL already pulled."
 else
@@ -69,7 +69,7 @@ else
     ok "Venv created."
 fi
 
-info "Installing betterclaud into venv..."
+info "Installing openclawd into venv..."
 "$VENV_DIR/bin/pip" install --quiet --upgrade pip
 "$VENV_DIR/bin/pip" install --quiet "$SCRIPT_DIR"
 ok "Package installed."
@@ -88,12 +88,12 @@ fi
 
 if command -v claude >/dev/null 2>&1; then
     info "Registering MCP server with Claude Code..."
-    claude mcp remove betterclaud-memory 2>/dev/null || true
-    claude mcp add --scope user betterclaud-memory -- "$VENV_DIR/bin/python3" -m betterclaud.server
+    claude mcp remove openclawd-memory 2>/dev/null || true
+    claude mcp add --scope user openclawd-memory -- "$VENV_DIR/bin/python3" -m openclawd.server
     ok "MCP server registered."
 else
     warn "Claude Code CLI not found. Register manually:"
-    echo "  claude mcp add --scope user betterclaud-memory -- $VENV_DIR/bin/python3 -m betterclaud.server"
+    echo "  claude mcp add --scope user openclawd-memory -- $VENV_DIR/bin/python3 -m openclawd.server"
 fi
 
 # --- Hooks ---
@@ -148,7 +148,7 @@ ok "Hooks configured in $SETTINGS_FILE"
 
 GLOBAL_CLAUDE_MD="$HOME/.claude/CLAUDE.md"
 if [ ! -f "$GLOBAL_CLAUDE_MD" ]; then
-    read -r -p "$(echo -e '\033[1;34m[betterclaud]\033[0m') Copy CLAUDE.md template to $GLOBAL_CLAUDE_MD? [y/N] " response
+    read -r -p "$(echo -e '\033[1;34m[openclawd]\033[0m') Copy CLAUDE.md template to $GLOBAL_CLAUDE_MD? [y/N] " response
     if [[ "$response" =~ ^[Yy]$ ]]; then
         cp "$SCRIPT_DIR/CLAUDE.md.template" "$GLOBAL_CLAUDE_MD"
         ok "CLAUDE.md installed."
@@ -159,14 +159,14 @@ fi
 
 # --- Optional: Vault setup ---
 
-if [ -z "${BETTERCLAUD_VAULT_PATH:-}" ]; then
-    read -r -p "$(echo -e '\033[1;34m[betterclaud]\033[0m') Set up Obsidian vault path? [y/N] " response
+if [ -z "${OPENCLAWD_VAULT_PATH:-}" ]; then
+    read -r -p "$(echo -e '\033[1;34m[openclawd]\033[0m') Set up Obsidian vault path? [y/N] " response
     if [[ "$response" =~ ^[Yy]$ ]]; then
         read -r -p "  Vault path: " vault_path
         if [ -d "$vault_path" ]; then
             # Add to .env
-            echo "BETTERCLAUD_VAULT_PATH=$vault_path" >> "$CONFIG_DIR/.env"
-            ok "Vault path set. Run 'betterclaud-index' to index it."
+            echo "OPENCLAWD_VAULT_PATH=$vault_path" >> "$CONFIG_DIR/.env"
+            ok "Vault path set. Run 'openclawd-index' to index it."
         else
             warn "Path '$vault_path' does not exist. Skipping."
         fi
@@ -186,7 +186,7 @@ else
 fi
 
 # Check embedding
-if "$VENV_DIR/bin/python3" -c "from betterclaud.embeddings import embed_one; v = embed_one('test'); print(f'Embedding dim: {len(v)}')" 2>/dev/null; then
+if "$VENV_DIR/bin/python3" -c "from openclawd.embeddings import embed_one; v = embed_one('test'); print(f'Embedding dim: {len(v)}')" 2>/dev/null; then
     ok "Embeddings working."
 else
     warn "Embedding test failed. Is Ollama running with $EMBED_MODEL?"
@@ -194,7 +194,7 @@ fi
 
 # Check MCP registration
 if command -v claude >/dev/null 2>&1; then
-    if claude mcp list 2>/dev/null | grep -q betterclaud-memory; then
+    if claude mcp list 2>/dev/null | grep -q openclawd-memory; then
         ok "MCP server registered."
     else
         warn "MCP server not showing in 'claude mcp list'."

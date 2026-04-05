@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-time migration: Claudia's LanceDB memories → BetterClaud format.
+"""One-time migration: Claudia's LanceDB memories → OpenClawdCode format.
 
 Usage:
     python3 scripts/migrate_claudia.py --source /path/to/claudia/lancedb --table conversations
@@ -15,15 +15,15 @@ import pyarrow as pa
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Migrate Claudia memories to BetterClaud")
+    parser = argparse.ArgumentParser(description="Migrate Claudia memories to OpenClawdCode")
     parser.add_argument("--source", required=True, help="Path to Claudia's LanceDB directory")
     parser.add_argument("--table", default="conversations", help="Source table name")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
     args = parser.parse_args()
 
     # Import after arg parse so --help works without deps
-    from betterclaud import config
-    from betterclaud.db import MEMORY_SCHEMA, get_or_create_table
+    from openclawd import config
+    from openclawd.db import MEMORY_SCHEMA, get_or_create_table
 
     source_db = lancedb.connect(args.source)
 
@@ -78,7 +78,7 @@ def main():
         dest_table.add([new_row])
         migrated += 1
 
-    print(f"Migrated {migrated} memories to BetterClaud.")
+    print(f"Migrated {migrated} memories to OpenClawdCode.")
 
 
 if __name__ == "__main__":

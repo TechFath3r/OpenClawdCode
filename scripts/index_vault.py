@@ -2,7 +2,7 @@
 """CLI wrapper for vault indexer.
 
 Usage:
-    betterclaud-index [--incremental] [--vault /path] [--dry-run]
+    openclawd-index [--incremental] [--vault /path] [--dry-run]
 """
 
 import argparse
@@ -16,7 +16,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Show what would be indexed")
     args = parser.parse_args()
 
-    from betterclaud.vault_indexer import index_vault
+    from openclawd.vault_indexer import index_vault
 
     result = index_vault(
         vault_path=args.vault,

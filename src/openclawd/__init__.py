@@ -1,0 +1,2 @@
+"""OpenClawdCode — persistent cross-project memory for Claude Code."""
+__version__ = "0.1.0"
