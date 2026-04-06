@@ -104,6 +104,8 @@ mkdir -p "$HOME/.claude"
 # Ensure hooks are executable
 chmod +x "$SCRIPT_DIR/hooks/session_end.py"
 chmod +x "$SCRIPT_DIR/hooks/post_compact.py"
+chmod +x "$SCRIPT_DIR/hooks/user_prompt_submit.py"
+chmod +x "$SCRIPT_DIR/hooks/session_start.py"
 
 # Merge hooks into settings.json
 python3 - "$SETTINGS_FILE" "$SCRIPT_DIR" <<'PYEOF'
@@ -136,6 +138,22 @@ compact_cmd = f"python3 {script_dir}/hooks/post_compact.py"
 if not any(h.get("command") == compact_cmd for h in compact_hooks):
     compact_hooks.append({"command": compact_cmd})
 hooks["PostCompact"] = compact_hooks
+
+# UserPromptSubmit hook — inject relevant memories before each prompt
+# Uses venv Python so it has access to the openclawd package
+venv_python = str(Path.home() / ".local/share/openclawd/venv/bin/python3")
+prompt_hooks = hooks.get("UserPromptSubmit", [])
+prompt_cmd = f"{venv_python} {script_dir}/hooks/user_prompt_submit.py"
+if not any(h.get("command") == prompt_cmd for h in prompt_hooks):
+    prompt_hooks.append({"command": prompt_cmd})
+hooks["UserPromptSubmit"] = prompt_hooks
+
+# SessionStart hook — preload project memories
+start_hooks = hooks.get("SessionStart", [])
+start_cmd = f"{venv_python} {script_dir}/hooks/session_start.py"
+if not any(h.get("command") == start_cmd for h in start_hooks):
+    start_hooks.append({"command": start_cmd})
+hooks["SessionStart"] = start_hooks
 
 settings["hooks"] = hooks
 

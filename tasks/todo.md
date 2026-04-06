@@ -27,11 +27,11 @@ Goal: match the capabilities of CortexReach's memory plugin inside Claude Code.
 - [x] **Auto migration in get_or_create_table** — detects schema drift, adds missing columns via LanceDB `add_columns` with SQL defaults. Idempotent, forward-compat. *(shipped 0.2.0)*
 
 ### Retrieval pipeline
-- [ ] **Hybrid retrieval (weighted sum, NOT RRF)** — `fused = 0.7 * vector + 0.3 * bm25`, with exact-match floor: if `bm25 ≥ 0.75`, take `max(fused, bm25 * 0.92)`. Clamp to `[0.1, 1.0]`. LanceDB native FTS for BM25.
-- [ ] **Candidate pool** — fetch top `max(20, limit*2)` from each of vector and BM25, union, sort by fused score
+- [x] **Hybrid retrieval (weighted sum, NOT RRF)** — `fused = 0.7 * vector + 0.3 * bm25`, with exact-match floor: if `bm25 ≥ 0.75`, take `max(fused, bm25 * 0.92)`. Clamp to `[0.1, 1.0]`. LanceDB native FTS for BM25. *(shipped)*
+- [x] **Candidate pool** — fetch top `max(20, limit*2)` from each of vector and BM25, union, sort by fused score *(shipped)*
 - [ ] **Cross-encoder rerank** — default `bge-reranker-v2-m3` via Ollama (not jina, we're local-only). Rerank `limit*2` candidates. Blend: `0.6*rerank + 0.4*fused`. Hard cutoff at `0.35`.
 - [ ] **Post-process pipeline order** — `minScore(0.3) → rerank → recency_boost → importance_weight → length_norm → hard_min(0.35) → MMR_diversity → limit`
-- [ ] **Composite decay score** — `0.4*recency + 0.3*frequency + 0.3*intrinsic`, applied as multiplier on search score with tier floor. See formulas below.
+- [x] **Composite decay score** — `0.4*recency + 0.3*frequency + 0.3*intrinsic`, applied as multiplier on search score with tier floor. Wired into retriever as `apply_search_boost`. *(shipped)*
 
 ### Decay engine (composite, not pure Weibull) *(shipped 0.2.0)*
 - [x] **Recency (Weibull stretched-exponential):**
@@ -54,9 +54,9 @@ Goal: match the capabilities of CortexReach's memory plugin inside Claude Code.
 - [ ] **Admission control (opt-in)** — AMAC-v1 scoring: `utility + confidence + novelty + recency + typePrior`. Defaults (balanced preset): `admit ≥ 0.60`, `reject < 0.45`. Type priors: `profile=0.95, preferences=0.9, patterns=0.85, cases=0.8, entities=0.75, events=0.45`
 
 ### Context injection
-- [ ] **`UserPromptSubmit` hook** — fetch top-K memories for current prompt (hybrid retrieval + decay), inject as markdown block before the prompt
-- [ ] **Token budget** — cap injection at configurable N tokens (default ~2000), rank by rerank score
-- [ ] **`SessionStart` hook** — preload top memories scoped to current cwd / project
+- [x] **`UserPromptSubmit` hook** — fetch top-K memories for current prompt (hybrid retrieval + decay), inject as `addToPrompt` markdown block. Scoped to `project:<cwd_name> OR global`. *(shipped)*
+- [x] **Token budget** — cap injection at configurable chars via `OPENCLAWD_INJECT_BUDGET` (default 8000 chars ≈ 2000 tokens). *(shipped)*
+- [x] **`SessionStart` hook** — preload top memories scoped to current cwd/project as `systemMessage`. *(shipped)*
 - [ ] **`PostCompact` hook** — flag that next UserPromptSubmit should re-inject project summaries
 
 ### Isolation / scoping

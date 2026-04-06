@@ -1,9 +1,10 @@
-"""MCP tool: recall memories via semantic search."""
+"""MCP tool: recall memories via hybrid semantic + keyword search."""
 
 import json
 
 from ..db import MEMORY_SCHEMA, get_or_create_table
 from ..embeddings import embed_one
+from ..retriever import hybrid_recall, _ensure_fts_index
 from .. import config
 
 
@@ -16,7 +17,7 @@ def memory_recall(
     tier: str = "",
     scope: str = "",
 ) -> str:
-    """Search stored memories semantically.
+    """Search stored memories using hybrid vector + BM25 retrieval with decay scoring.
 
     Args:
         query: Natural language search query.
@@ -35,9 +36,10 @@ def memory_recall(
     except Exception:
         return "No memories stored yet."
 
-    vector = embed_one(query)
+    # Ensure FTS index exists for BM25 leg of hybrid search
+    _ensure_fts_index(table)
 
-    search = table.search(vector).limit(limit)
+    vector = embed_one(query)
 
     # Build where clause
     filters = []
@@ -52,37 +54,31 @@ def memory_recall(
     if scope:
         filters.append(f"scope = '{scope}'")
 
-    if filters:
-        search = search.where(" AND ".join(filters))
+    where = " AND ".join(filters) if filters else ""
 
-    try:
-        results = search.to_arrow()
-    except Exception as e:
-        return f"Search error: {e}"
+    results = hybrid_recall(
+        table=table,
+        query_text=query,
+        query_vector=vector,
+        limit=limit,
+        where=where,
+        apply_decay=True,
+    )
 
-    if len(results) == 0:
+    if not results:
         return "No matching memories found."
 
     output = []
-    for i in range(len(results)):
-        content = results.column("content")[i].as_py()
-        cat = results.column("category")[i].as_py()
-        proj = results.column("project")[i].as_py()
-        tags = results.column("tags")[i].as_py()
-        imp = results.column("importance")[i].as_py()
-        tier_val = results.column("tier")[i].as_py()
-        scope_val = results.column("scope")[i].as_py()
-        dist = results.column("_distance")[i].as_py()
-
-        tags_str = ", ".join(json.loads(tags)) if tags else ""
-        proj_str = f" [{proj}]" if proj else ""
+    for i, mem in enumerate(results):
+        tags_str = ", ".join(json.loads(mem.tags)) if mem.tags and mem.tags != "[]" else ""
+        proj_str = f" [{mem.project}]" if mem.project else ""
         tags_line = f"  Tags: {tags_str}\n" if tags_str else ""
 
         output.append(
-            f"--- Memory {i + 1} (distance: {dist:.4f}) ---\n"
-            f"  Category: {cat}{proj_str} | Importance: {imp} | Tier: {tier_val} | Scope: {scope_val}\n"
+            f"--- Memory {i + 1} (score: {mem.score:.4f} | vec: {mem.vector_score:.3f} bm25: {mem.bm25_score:.3f}) ---\n"
+            f"  Category: {mem.category}{proj_str} | Importance: {mem.importance} | Tier: {mem.tier} | Scope: {mem.scope}\n"
             f"{tags_line}"
-            f"  {content}"
+            f"  {mem.content}"
         )
 
     return "\n\n".join(output)
