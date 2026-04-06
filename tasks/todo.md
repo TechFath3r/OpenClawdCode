@@ -33,14 +33,14 @@ Goal: match the capabilities of CortexReach's memory plugin inside Claude Code.
 - [ ] **Post-process pipeline order** — `minScore(0.3) → rerank → recency_boost → importance_weight → length_norm → hard_min(0.35) → MMR_diversity → limit`
 - [ ] **Composite decay score** — `0.4*recency + 0.3*frequency + 0.3*intrinsic`, applied as multiplier on search score with tier floor. See formulas below.
 
-### Decay engine (composite, not pure Weibull)
-- [ ] **Recency (Weibull stretched-exponential):**
+### Decay engine (composite, not pure Weibull) *(shipped 0.2.0)*
+- [x] **Recency (Weibull stretched-exponential):**
   - `effectiveHL = baseHL * exp(1.5 * importance)` where `baseHL = 30 days` (or `30/3` if `temporal_type == "dynamic"`)
   - `λ = ln(2) / effectiveHL`; `β` per-tier: `core=0.8, working=1.0, peripheral=1.3`
   - `recency = exp(-λ * days_since_last_active^β)` — where `last_active = lastAccessedAt if accessCount > 0 else createdAt`
-- [ ] **Frequency:** `base = 1 - exp(-accessCount/5)`; `recentnessBonus = exp(-avgGapDays/30)`; `frequency = base * (0.5 + 0.5*recentnessBonus)`
-- [ ] **Intrinsic:** `importance * confidence`
-- [ ] **Search boost application:** `multiplier = boostMin + (1-boostMin) * max(tierFloor, composite)`, clamped `[boostMin=0.3, 1.0]`. Tier floors: `core=0.9, working=0.7, peripheral=0.5`.
+- [x] **Frequency:** `base = 1 - exp(-accessCount/5)`; `recentnessBonus = exp(-avgGapDays/30)`; `frequency = base * (0.5 + 0.5*recentnessBonus)`
+- [x] **Intrinsic:** `importance * confidence / 10` (normalized)
+- [x] **Search boost application:** `multiplier = boostMin + (1-boostMin) * max(tierFloor, composite)`, clamped `[boostMin=0.3, 1.0]`. Tier floors: `core=0.9, working=0.7, peripheral=0.5`.
 
 ### Auto-capture
 - [ ] **`Stop` hook → memory extractor** — LLM call (default Haiku 4.5, configurable to Ollama). Max **5 memories per extraction**. Output schema: `{memories: [{category, abstract, overview, content}]}`
