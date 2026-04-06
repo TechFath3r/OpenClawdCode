@@ -42,3 +42,10 @@ CHROMADB_COLLECTION: str = _get("OPENCLAWD_CHROMADB_COLLECTION", "default")
 
 # Context profiles directory (empty = disabled)
 CONTEXT_DIR: str = _get_path("OPENCLAWD_CONTEXT_DIR", "")
+
+# Memory extraction LLM
+# "haiku" uses Anthropic API (needs ANTHROPIC_API_KEY), "ollama" uses local Ollama.
+# "auto" (default) → haiku if ANTHROPIC_API_KEY is set, else ollama.
+EXTRACTOR: str = _get("OPENCLAWD_EXTRACTOR", "auto")
+EXTRACTOR_OLLAMA_MODEL: str = _get("OPENCLAWD_EXTRACTOR_MODEL", "llama3.2")
+EXTRACTOR_MAX_MEMORIES: int = int(_get("OPENCLAWD_EXTRACTOR_MAX_MEMORIES", "5"))

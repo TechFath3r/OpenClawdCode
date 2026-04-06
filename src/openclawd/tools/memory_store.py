@@ -40,6 +40,7 @@ def memory_store(
     overview: str = "",
     confidence: float = 1.0,
     scope: str = "",
+    source_tag: str = "manual",
 ) -> str:
     """Store a memory for later recall. Deduplicates by content hash.
 
@@ -55,6 +56,7 @@ def memory_store(
         overview: Markdown summary (L1). Optional.
         confidence: 0..1 confidence in this memory (default 1.0).
         scope: Explicit scope string; if empty, derived from project.
+        source_tag: Origin of this memory (manual, auto_extract, migration).
     """
     if tags is None:
         tags = []
@@ -100,7 +102,7 @@ def memory_store(
         "importance": importance,
         "created_at": now,
         "updated_at": now,
-        "source": "manual",
+        "source": source_tag,
         "abstract": abstract,
         "overview": overview,
         "tier": tier,

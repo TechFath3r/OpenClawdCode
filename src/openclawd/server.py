@@ -60,6 +60,22 @@ def recall_memory(
 
 
 @mcp.tool()
+def extract_memories(
+    conversation: str,
+    project: str = "",
+    scope: str = "",
+) -> str:
+    """Auto-extract memories from a conversation summary.
+
+    Call this at session end with a summary of what was discussed.
+    Extracts up to 5 memories, deduplicates against existing memories,
+    and stores the survivors. Returns a summary of what was stored.
+    """
+    from .extractor import auto_extract_and_store
+    return auto_extract_and_store(conversation, project, scope)
+
+
+@mcp.tool()
 def log_session(
     summary: str,
     project: str = "general",

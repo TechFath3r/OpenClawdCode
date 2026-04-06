@@ -86,7 +86,8 @@ The setup script:
 | Tool | Description | Status |
 |------|-------------|--------|
 | `store_memory` | Save facts, learnings, preferences, decisions | ✅ |
-| `recall_memory` | Semantic search over stored memories | ✅ |
+| `recall_memory` | Hybrid vector + BM25 search with decay scoring | ✅ |
+| `extract_memories` | Auto-extract memories from conversation (with dedup) | ✅ |
 | `log_session` | Write session summary as markdown | ✅ |
 | `search_vault` | Search indexed Obsidian vault | ✅ (optional) |
 | `search_knowledge` | Search ChromaDB knowledge bases | ✅ (optional) |

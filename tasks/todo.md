@@ -42,15 +42,15 @@ Goal: match the capabilities of CortexReach's memory plugin inside Claude Code.
 - [x] **Intrinsic:** `importance * confidence / 10` (normalized)
 - [x] **Search boost application:** `multiplier = boostMin + (1-boostMin) * max(tierFloor, composite)`, clamped `[boostMin=0.3, 1.0]`. Tier floors: `core=0.9, working=0.7, peripheral=0.5`.
 
-### Auto-capture
-- [ ] **`Stop` hook → memory extractor** — LLM call (default Haiku 4.5, configurable to Ollama). Max **5 memories per extraction**. Output schema: `{memories: [{category, abstract, overview, content}]}`
-- [ ] **6 categories** — `profile, preferences, entities, events, cases, patterns`. Category rules:
+### Auto-capture *(shipped)*
+- [x] **`Stop` hook → memory extractor** — LLM call (auto: Haiku 4.5 if ANTHROPIC_API_KEY, else Ollama). Max 5 memories. Output schema: `{memories: [{category, abstract, overview, content}]}`. Exposed as `extract_memories` MCP tool. Stop hook nudges Claude to call it with session summary. *(shipped)*
+- [x] **6 categories** — `profile, preferences, entities, events, cases, patterns`. Category rules:
   - `ALWAYS_MERGE`: `profile` (skip dedup, always merge)
   - `MERGE_SUPPORTED`: `preferences, entities, patterns`
   - `TEMPORAL_VERSIONED`: `preferences, entities` (facts replaced over time)
   - `APPEND_ONLY`: `events, cases` (create or skip only)
-- [ ] **Batch-internal dedup** — pairwise cosine on L0 abstracts, threshold `0.85`
-- [ ] **Pre-store dedup** — vector search against existing memories, threshold `0.7`, top-3 similar sent to LLM dedup prompt which returns `{decision: create|merge|skip|support|contextualize|contradict|supersede, match_index, reason}`
+- [x] **Batch-internal dedup** — pairwise cosine on L0 abstracts, threshold `0.85` *(shipped)*
+- [x] **Pre-store dedup** — vector search existing at `0.7`, top-3 to LLM dedup prompt → `{decision: create|merge|skip|supersede, match_index, reason}`. Merge appends, supersede deletes old. *(shipped)*
 - [ ] **Admission control (opt-in)** — AMAC-v1 scoring: `utility + confidence + novelty + recency + typePrior`. Defaults (balanced preset): `admit ≥ 0.60`, `reject < 0.45`. Type priors: `profile=0.95, preferences=0.9, patterns=0.85, cases=0.8, entities=0.75, events=0.45`
 
 ### Context injection
